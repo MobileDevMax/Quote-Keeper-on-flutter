@@ -1,0 +1,105 @@
+import 'package:flutter/material.dart';
+import 'package:shared_preferences/shared_preferences.dart';
+
+void main() {
+  runApp(QuoteApp());
+}
+
+class QuoteApp extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) {
+    return MaterialApp(
+      title: 'Quote Keeper',
+      theme: ThemeData(
+        primarySwatch: Colors.blue,
+      ),
+      home: QuoteHomePage(),
+    );
+  }
+}
+
+class QuoteHomePage extends StatefulWidget {
+  @override
+  _QuoteHomePageState createState() => _QuoteHomePageState();
+}
+
+class _QuoteHomePageState extends State<QuoteHomePage> {
+  final TextEditingController _quoteController = TextEditingController();
+  List<String> _quotes = [];
+
+  @override
+  void initState() {
+    super.initState();
+    _loadQuotes();
+  }
+
+// Load quotes from shared preferences
+  _loadQuotes() async {
+    SharedPreferences prefs = await SharedPreferences.getInstance();
+    setState(() {
+      _quotes = prefs.getStringList('quotes') ?? [];
+    });
+  }
+
+// Save a new quote to shared preferences
+  _saveQuote() async {
+    if (_quoteController.text.isNotEmpty) {
+      SharedPreferences prefs = await SharedPreferences.getInstance();
+      _quotes.add(_quoteController.text);
+      await prefs.setStringList('quotes', _quotes);
+      _quoteController.clear();
+      setState(() {});
+    }
+  }
+
+// Remove a quote from the list
+  _removeQuote(int index) async {
+    SharedPreferences prefs = await SharedPreferences.getInstance();
+    _quotes.removeAt(index);
+    await prefs.setStringList('quotes', _quotes);
+    setState(() {});
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(
+        title: Text('Quote Keeper'),
+      ),
+      body: Padding(
+        padding: EdgeInsets.all(16.0),
+        child: Column(
+          children: [
+            TextField(
+              controller: _quoteController,
+              decoration: InputDecoration(
+                labelText: 'Enter a quote',
+                border: OutlineInputBorder(),
+              ),
+            ),
+            SizedBox(height: 10),
+            ElevatedButton(
+              onPressed: _saveQuote,
+              child: Text('Save Quote'),
+            ),
+            SizedBox(height: 20),
+            Expanded(
+              child: ListView.builder(
+                itemCount: _quotes.length,
+                itemBuilder: (context, index) {
+                  return ListTile(
+                    title: Text(_quotes[index]),
+                    trailing: IconButton(
+                      icon: Icon(Icons.delete),
+                      onPressed: () => _removeQuote(index),
+                    ),
+                  );
+                },
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
